@@ -7,10 +7,6 @@
 #include <slankdev/packet.h>
 
 
-class BPF : public Xbyak::CodeGenerator {
- public:
-  BPF(void *userPtr=0, size_t size=Xbyak::DEFAULT_MAX_CODE_SIZE)
-};
 
 
 class Sample : public Xbyak::CodeGenerator {
