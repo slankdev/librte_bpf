@@ -6,11 +6,16 @@
 #include <slankdev/hexdump.h>
 #include <slankdev/packet.h>
 
+
+class BPF : public Xbyak::CodeGenerator {
+ public:
+  BPF(void *userPtr=0, size_t size=Xbyak::DEFAULT_MAX_CODE_SIZE)
+};
+
+
 class Sample : public Xbyak::CodeGenerator {
 	void operator=(const Sample&);
-public:
-
-
+ public:
 	Sample(void *userPtr = 0, size_t size = Xbyak::DEFAULT_MAX_CODE_SIZE)
     : Xbyak::CodeGenerator(size, userPtr)
 	{
@@ -33,9 +38,9 @@ public:
     add(ecx, 12);
     cmp(byte[ecx+0], 0x08);
     jnz("FIN");
-    // add(ecx, 1);
-    // cmp(dword[ecx], 0x06);
-    // jnz("FIN");
+    add(ecx, 1);
+    cmp(byte[ecx], 0x00);
+    jnz("FIN");
 
     mov(eax, 1);
 		ret();
