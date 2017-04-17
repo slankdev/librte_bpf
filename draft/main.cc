@@ -53,16 +53,16 @@ class bpf : public Xbyak::CodeGenerator {
       uint32_t k    = insn.k;
       switch (code) {
         case LD|H|ABS:
-          printf("ldh\n");
+          printf("ldh [%u]\n", k);
           break;
         case LD|B|ABS:
-          printf("ldb\n");
+          printf("ldb [%u]\n", k);
           break;
         case JMP|JEQ|K:
-          printf("jeq\n");
+          printf("jeq 0x%x jt=%u, jf=%u\n", k, jt, jf);
           break;
         case RET|K:
-          printf("ret\n");
+          printf("ret %u\n", k);
           break;
         default:
           printf("unknown\n");
