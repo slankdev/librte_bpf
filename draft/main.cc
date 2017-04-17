@@ -35,6 +35,9 @@ class bpf : public Xbyak::CodeGenerator {
      *  esi     2nd arg
      *  eax     ret value
      *
+     *  ecx     free as A Acumulator
+     *  edx     free as X Index Register
+     *
      * MNEMONIC
      *  mov(a, b)    a <- b
      *  add(a, b)    a <- a+b
@@ -44,47 +47,68 @@ class bpf : public Xbyak::CodeGenerator {
      *  void filter(const uint8_t* ptr, size_t len);
      */
 
-    using namespace slankdev;
-    for (size_t i=0; i<prog->bf_len; i++) {
-      struct bpf_insn insn = prog->bf_insns[i];
-      uint16_t code = insn.code;
-      uint8_t  jt   = insn.jt;
-      uint8_t  jf   = insn.jf;
-      uint32_t k    = insn.k;
-      switch (code) {
-        case LD|H|ABS:
-          printf("ldh [%u]\n", k);
-          break;
-        case LD|B|ABS:
-          printf("ldb [%u]\n", k);
-          break;
-        case JMP|JEQ|K:
-          printf("jeq 0x%x jt=%u, jf=%u\n", k, jt, jf);
-          break;
-        case RET|K:
-          printf("ret %u\n", k);
-          break;
-        default:
-          printf("unknown\n");
-          break;
-      }
-    }
-    printf("\n");
 
-		mov(ecx, edi);
-    add(ecx, 12);
-    cmp(byte[ecx+0], 0x08);
-    jnz("FIN");
-    add(ecx, 1);
-    cmp(byte[ecx], 0x00);
-    jnz("FIN");
 
-    mov(eax, 1);
-		ret();
+    // using namespace slankdev;
+    // for (size_t i=0; i<prog->bf_len; i++) {
+    //   struct bpf_insn insn = prog->bf_insns[i];
+    //   uint16_t code = insn.code;
+    //   uint8_t  jt   = insn.jt;
+    //   uint8_t  jf   = insn.jf;
+    //   uint32_t k    = insn.k;
+    //
+    //   printf("(%03u)  ", i);
+    //   L(std::to_string(i).c_str());
+    //
+    //   switch (code) {
+    //
+    //     case LD|H|ABS:
+    //       printf("ldh [%u]\n", k);
+    //       mov(cx, ptr [edi + k]);
+    //       break;
+    //
+    //     case LD|B|ABS:
+    //       printf("ldb [%u]\n", k);
+    //       mov(ecx, byte [edi + k]);
+    //       break;
+    //
+    //     case JMP|JEQ|K:
+    //       printf("jeq 0x%x jt=%u, jf=%u\n", k, jt+i+1, jf+i+1);
+    //       cmp(ecx, k);
+    //       jz(std::to_string(jt+i).c_str());
+    //       jmp(std::to_string(jf+i).c_str());
+    //       break;
+    //
+    //     case RET|K:
+    //       printf("ret %u\n", k);
+    //       mov(eax, k);
+    //       ret();
+    //       break;
+    //
+    //     default:
+    //       throw slankdev::exception("unknow opcode");
+    //       break;
+    //
+    //   }
+    // }
+    // printf("\n");
 
-   L("FIN");
-    mov(eax, 0);
-    ret();
+    nop();
+    nop();
+    nop();
+    nop();
+    nop();
+    nop();
+    nop();
+    nop();
+    nop();
+    nop();
+    nop();
+    nop();
+    nop();
+    nop();
+    nop();
+
 	}
 };
 
@@ -96,13 +120,16 @@ int main()
   pcap.open_dead();
 
   struct bpf_program prog;
-  pcap.compile(&prog, "ip and tcp", 0, 0xffffff00);
+  pcap.compile(&prog, "ip", 0, 0xffffff00);
 
   bpf s(&prog);
   printf("BPF JIT with Xbyak%s x86 ASM\n", s.getVersionString());
 
   int (*func)(const void*,size_t) = s.getCode<int (*)(const void*,size_t)>();
-  printf("result: %d\n", func(slankdev::raw_arp_pack(),42));
+  slankdev::hexdump(stdout, slankdev::raw_arp_pack(), 42);
+  const uint8_t* pack = slankdev::raw_arp_pack();
+  int ret = func(pack,42);
+  printf("result: %d\n", ret);
 
   slankdev::capstone c;
   c.disasm((void*)func, 40, 0x1000, 0);
