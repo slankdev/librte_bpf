@@ -1,25 +1,5 @@
 
 
-/*
- * MEMO
- *  edi     1st arg
- *  esi     2nd arg
- *  eax     ret value
- *
- *  ecx     free as A Acumulator
- *  edx     free as X Index Register
- *
- * MNEMONIC
- *  mov(a, b)    a <- b
- *  add(a, b)    a <- a+b
- *  test(a, b)
- *
- * FUNC
- *  void filter(const uint8_t* ptr, size_t len);
- */
-
-
-
 #include <slankdev/hexdump.h>
 #include <slankdev/packet.h>
 #include <slankdev/endian.h>
@@ -152,7 +132,6 @@ class bpf_tcp : public Xbyak::CodeGenerator {
 	bpf_tcp(void *userPtr = 0, size_t size = Xbyak::DEFAULT_MAX_CODE_SIZE)
     : Xbyak::CodeGenerator(size, userPtr)
 	{
-    printf("JIT start \n");
     inLocalLabel();
 
    L(num2lavel(0)); /* ldh [12] */
@@ -186,9 +165,24 @@ class bpf_tcp : public Xbyak::CodeGenerator {
     for (size_t i=0; i<100; i++) nop();
     outLocalLabel();
 	}
+
+  void debug(const Xbyak::Reg32& r, const char* msg)
+  {
+    inLocalLabel();
+    push(esi); push(edi); push(eax); push(ecx);
+
+    static const char* str = "DebugPring %s=0x%x msg=%s\n";
+    mov(edi, (size_t)str);
+    mov(esi, (size_t)r.toString());
+    mov(edx, r);
+    mov(ecx, (size_t)msg);
+    mov(eax, 0);
+    call((void*)printf);
+
+    pop(esi); pop(edi); pop(eax); pop(ecx);
+    outLocalLabel();
+  }
 };
-
-
 
 
 
@@ -235,8 +229,8 @@ class bpf : public Xbyak::CodeGenerator {
 
         case JMP|JEQ|K:
           cmp(ecx, k);
-          jz (num2lavel(jt));
-          jmp(num2lavel(jf));
+          jz (num2lavel(jt), T_NEAR);
+          jmp(num2lavel(jf), T_NEAR);
           break;
 
         case RET|K:
@@ -254,6 +248,18 @@ class bpf : public Xbyak::CodeGenerator {
     for (size_t i=0; i<100; i++) nop();
     outLocalLabel();
 	}
+
+  void debug(const Xbyak::Reg32& r, const char* msg="")
+  {
+    static const char* str = "DebugPring %s=0x%x msg=%s\n";
+    mov(edi, (size_t)str);
+    mov(esi, (size_t)r.toString());
+    mov(edx, r);
+    mov(ecx, (size_t)msg);
+    mov(eax, 0);
+    call((void*)printf);
+  }
+
 };
 
 
@@ -271,5 +277,8 @@ int main()
   int ret = func(raw_packet,sizeof(raw_packet));
   printf("\n\nresult: %d (%s)\n", ret, ret==0?"eject":"pass");
 }
+
+
+
 
 
