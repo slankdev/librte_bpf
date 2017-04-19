@@ -1,4 +1,7 @@
 
+
+
+#include <stdio.h>
 #include "bpf/bpf.h"
 
 uint8_t raw_packet[] = {
@@ -30,6 +33,7 @@ uint8_t raw_packet[] = {
     0x63, 0x63, 0x65, 0x70, 0x74, 0x3a, 0x20, 0x2a,
     0x2f, 0x2a, 0x0d, 0x0a, 0x0d, 0x0a,
 };
+
 
 inline void disas_x86(const void* ptr, size_t len)
 {
@@ -65,3 +69,6 @@ int main()
   int ret = func(raw_packet,sizeof(raw_packet));
   printf("\n\nresult: %d (%s)\n", ret, ret==0?"eject":"pass");
 }
+
+
+
