@@ -1,18 +1,15 @@
 
 #pragma once
 
-#include <slankdev/hexdump.h>
-#include <slankdev/packet.h>
-#include <slankdev/endian.h>
-#include <slankdev/extra/bpf.h>
-#include <slankdev/extra/pcap.h>
-#include <slankdev/extra/capstone.h>
 #define XBYAK_NO_OP_NAMES
 #include <xbyak/xbyak.h>
+#include "slankdev/extra/bpf.h"
+#include "slankdev/extra/pcap.h"
+#include "misc.h"
 
 
 class bpf : public Xbyak::CodeGenerator {
-
+  struct bpf_program prog;
   static const char* num2lavel(size_t n)
   {
     static std::string s;
@@ -21,20 +18,23 @@ class bpf : public Xbyak::CodeGenerator {
   }
 	void operator=(const bpf&);
  public:
-	bpf(const char* filter, void *userPtr = 0,
-      size_t size = Xbyak::DEFAULT_MAX_CODE_SIZE)
-    : Xbyak::CodeGenerator(size, userPtr)
-	{
+  struct bpf_program bpf_compile(const char* filter) const
+  {
+    struct bpf_program p;
     slankdev::pcap pcap;
     pcap.open_dead();
-
-    struct bpf_program prog;
-    pcap.compile(&prog, filter, 1, 0xffffff00);
-    printf("bpf dissasemble\n");
-    slankdev::dissas(prog.bf_insns, prog.bf_len);
-
-    using namespace slankdev;
+    pcap.compile(&p, filter, 1, 0xffffff00);
+    return p;
+  }
+  bpf(const struct bpf_program* pgm, void* userPtr = 0)
+    : Xbyak::CodeGenerator(Xbyak::DEFAULT_MAX_CODE_SIZE, userPtr)
+  { this->prog = *pgm; }
+	bpf(const char* filter, void *userPtr = 0)
+    : Xbyak::CodeGenerator(Xbyak::DEFAULT_MAX_CODE_SIZE, userPtr)
+	{
     inLocalLabel();
+    using namespace slankdev;
+    prog = bpf_compile(filter);
 
     size_t bf_len = prog.bf_len;
     for (size_t i=0; i<bf_len; i++) {
@@ -92,4 +92,16 @@ class bpf : public Xbyak::CodeGenerator {
     call((void*)printf);
   }
 
+  int operator()(const void* packet, size_t packet_len) const
+  { return getCode<int(*)(const void*,size_t)>()(packet, packet_len); }
+  void disas_bpf() const
+  { _disas_bpf(prog.bf_insns, prog.bf_len); }
+  void disas_x86() const
+  {
+    int (*func)(const void*,size_t) = getCode<int (*)(const void*,size_t)>();
+    _disas_x86((void*)func, Xbyak::DEFAULT_MAX_CODE_SIZE);
+  }
+
 };
+
+

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "bpf/bpf.h"
 
+
 uint8_t raw_packet[] = {
     /* arp packet */
     // 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -35,38 +36,19 @@ uint8_t raw_packet[] = {
 };
 
 
-inline void disas_x86(const void* ptr, size_t len)
-{
-  slankdev::capstone c;
-  c.disasm(ptr, len, 0x000, 0);
-  for (size_t i = 0; i < c.insn_len(); i++) {
-    const cs_insn* insn = c.get_insn();
-    printf("0x%04lx:    %-5s %-20s   ",
-        insn[i].address,
-        insn[i].mnemonic,
-        insn[i].op_str
-    );
-    for (size_t j=0; j<insn[i].size; j++) {
-      printf("%02x ", insn[i].bytes[j]);
-    }
-    printf("\n");
-
-    if (strcmp(insn[i].mnemonic, "nop") == 0) break;
-  }
-}
 
 
 int main()
 {
-  printf("Packet\n");
+  bpf filter("tcp");
+
+  filter.disas_bpf();
+  filter.disas_x86();
+
+  printf("\n\nPacket\n");
   slankdev::hexdump(stdout, raw_packet, sizeof(raw_packet));
 
-  bpf s("tcp");
-  printf("\n\nBPF JIT with Xbyak%s x86 ASM\n", s.getVersionString());
-  int (*func)(const void*,size_t) = s.getCode<int (*)(const void*,size_t)>();
-  disas_x86((void*)func, Xbyak::DEFAULT_MAX_CODE_SIZE);
-
-  int ret = func(raw_packet,sizeof(raw_packet));
+  int ret = filter(raw_packet, sizeof(raw_packet));
   printf("\n\nresult: %d (%s)\n", ret, ret==0?"eject":"pass");
 }
 
