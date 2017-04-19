@@ -41,11 +41,8 @@ uint8_t raw_packet[] = {
 int main()
 {
   bpf filter("tcp");
-
   filter.disas_bpf();
   filter.disas_x86();
-
-  printf("\n\nPacket\n");
   slankdev::hexdump(stdout, raw_packet, sizeof(raw_packet));
 
   int ret = filter(raw_packet, sizeof(raw_packet));
