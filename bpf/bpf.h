@@ -3,8 +3,8 @@
 
 #define XBYAK_NO_OP_NAMES
 #include <xbyak/xbyak.h>
-#include "slankdev/extra/bpf.h"
-#include "slankdev/extra/pcap.h"
+#include <slankdev/extra/bpf.h>
+#include <slankdev/extra/pcap.h>
 #include "misc.h"
 
 
